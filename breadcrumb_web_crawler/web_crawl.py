@@ -11,12 +11,14 @@ import click
 
 
 class Site:
-    def __init__(self, name, url, category):
+    def __init__(self, name, url, category, sub_dirs=False, limit=10):
         self.name = name
         self.url = url
         self.category = category
         self.emails = set()
         self.scraped = False
+        self.sub_dirs = sub_dirs
+        self.limit = limit
 
     def get_csv(self):
         csv_str = ''
@@ -30,8 +32,9 @@ class Site:
         new_urls = deque([self.url])
         # a set of urls that we have already crawled
         processed_urls = set()
+        count = 0
         while len(new_urls):
-
+            count += 1
             # move next url from the queue to the set of processed urls
             url = new_urls.popleft()
             processed_urls.add(url)
@@ -53,7 +56,8 @@ class Site:
             # extract all email addresses and add them into the resulting set
             new_emails = set(re.findall(r"[a-z0-9\.\-+_]+@[a-z0-9\.\-+_]+\.[a-z]+", response.text, re.I))
             try:
-                print "Found {} emails in {} with a total of {} emails in this domain.".format(len(new_emails), url, len(self.emails))
+                print "Found {} emails in {} with a total of {} emails in this domain.".format(len(new_emails), url,
+                                                                                               len(self.emails))
             except Exception, e:
                 print e
             self.emails.update(new_emails)
@@ -72,13 +76,17 @@ class Site:
                     link = path + link
                 # add the new url to the queue if it was not enqueued nor processed yet
                 if not link in new_urls and not link in processed_urls:
-                    new_urls.append(link)
+                    if self.sub_dirs:
+                        if count <= self.limit:
+                            new_urls.append(link)
 
 
 @click.command()
 @click.option('--sites', '-s', default='sites.csv', help='Input csv file.')
 @click.option('--outfile', '-o', default='sites_emails.csv', help='Output csv file.')
-def crawl(sites='sites.csv', outfile='sites_emails.csv'):
+@click.option('--limit', '-l', default=10, help='Limit number of sub urls to visit.')
+@click.option('--sub_dirs', '-sd', is_flag=True, default=False, help='Output csv file.')
+def crawl(sites='sites.csv', outfile='sites_emails.csv', sub_dirs=False, limit=10):
     if not os.path.isfile(sites):
         print 'File {} does not exist.'.format(sites)
         return
@@ -90,7 +98,7 @@ def crawl(sites='sites.csv', outfile='sites_emails.csv'):
             name = row['name']
             url = row['url']
 
-            site = Site(url=url, name=name, category=category)
+            site = Site(url=url, name=name, category=category, sub_dirs=sub_dirs, limit=limit)
             site.scrape_emails()
             data = site.get_csv()
 

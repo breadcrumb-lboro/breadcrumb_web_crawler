@@ -34,7 +34,6 @@ class Site:
         processed_urls = set()
         count = 0
         while len(new_urls):
-            count += 1
             # move next url from the queue to the set of processed urls
             url = new_urls.popleft()
             processed_urls.add(url)
@@ -67,6 +66,7 @@ class Site:
 
             # find and process all the anchors in the document
             for anchor in soup.find_all("a"):
+                count+=1
                 # extract link url from the anchor
                 link = anchor.attrs["href"] if "href" in anchor.attrs else ''
                 # resolve relative links

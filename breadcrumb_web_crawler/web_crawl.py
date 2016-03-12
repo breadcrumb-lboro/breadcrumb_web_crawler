@@ -40,8 +40,11 @@ class Site:
 
             # extract base url to resolve relative links
             parts = urlsplit(url)
-            base_url = "{0.scheme}://{0.netloc}".format(parts)
-            path = url[:url.rfind('/') + 1] if '/' in parts.path else url
+            try:
+                base_url = "{0.scheme}://{0.netloc}".format(parts)
+                path = url[:url.rfind('/') + 1] if '/' in parts.path else url
+            except:
+                continue
 
             if parts.path.split('.')[len(parts.path.split('.')) - 1] == 'pdf':
                 continue
@@ -50,7 +53,6 @@ class Site:
             try:
                 response = requests.get(url, timeout=1.0)
             except Exception, e:
-                print e
                 continue
             # extract all email addresses and add them into the resulting set
             new_emails = set(re.findall(r"[a-z0-9\.\-+_]+@[a-z0-9\.\-+_]+\.[a-z]+", response.text, re.I))
